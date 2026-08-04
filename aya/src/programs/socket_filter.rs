@@ -9,7 +9,16 @@ use std::{
 use aya_obj::generated::{
     SO_ATTACH_BPF, SO_DETACH_BPF, bpf_prog_type::BPF_PROG_TYPE_SOCKET_FILTER,
 };
-use libc::{SO_ATTACH_REUSEPORT_EBPF, SO_DETACH_REUSEPORT_BPF, SOL_SOCKET, setsockopt};
+use libc::{SOL_SOCKET, setsockopt};
+// Bionic declares these in its kernel uapi asm-generic/socket.h (52/68), but
+// libc's curated Android socket list omits them. Values apply to all Android
+// ABIs (arm, arm64, x86, x86_64, riscv64 all use the generic socket layout).
+#[cfg(target_os = "android")]
+const SO_ATTACH_REUSEPORT_EBPF: libc::c_int = 52;
+#[cfg(target_os = "android")]
+const SO_DETACH_REUSEPORT_BPF: libc::c_int = 68;
+#[cfg(not(target_os = "android"))]
+use libc::{SO_ATTACH_REUSEPORT_EBPF, SO_DETACH_REUSEPORT_BPF};
 use thiserror::Error;
 
 use crate::{
